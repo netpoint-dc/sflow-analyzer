@@ -1,0 +1,22 @@
+#!/bin/bash
+HOST=91.221.61.86
+killall sflowtool
+FILE=sflow-`date +"%Y%m%d-%H%M"`
+mv /sflow/current /sflow/$FILE
+screen -dmS sflow-collect /opt/save-sflow.sh
+cd /sflow
+ls sflow-* | while read F ; do
+	/opt/get_aggregated_by_hour $F
+	bzip2 -vc $F > /sflow/csf-$F.bz2
+done
+cat sflow* >> processed/sflow-`date +"%m%d"`.csv
+rm sflow*
+scp -i /root/.ssh/id_rsa.backup *.bz2 duplicator@$HOST:/home/duplicator/sf && rm *.bz2
+ls /sflow/ | grep aggregated | while read f ; do
+	tar cjvf $f.tbz2 $f
+	rm -R $f
+done
+scp -i /root/.ssh/id_rsa.backup -r /sflow/aggregated* duplicator@$HOST:/home/duplicator/sf && rm /sflow/aggregated*
+find /sflow/processed/*  -mtime +0 -exec rm {} \;
+
+
