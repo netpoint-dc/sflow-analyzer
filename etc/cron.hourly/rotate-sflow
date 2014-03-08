@@ -12,6 +12,7 @@ FILE=sflow-`date +"%Y%m%d-%H%M"`
 mv $LOCALPATH/current $LOCALPATH/$FILE
 
 # run collector again
+sleep 5
 screen -dmS sflow-collect /opt/save-sflow.sh
 
 # change to directory where sflow stored
