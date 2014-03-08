@@ -1,4 +1,5 @@
 #!/bin/bash
 
+. /opt/etc/rotate.conf
 
-/usr/bin/watch -n300 /opt/rotate-sflow >/dev/null 2>/dev/null &
+/usr/bin/watch -n$ROTATE /opt/rotate-sflow >/dev/null 2>/dev/null &
