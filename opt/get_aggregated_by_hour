@@ -16,8 +16,8 @@ my %PORTCOUNTERS = ();
 my $file = $ARGV[0];
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 
-mkdir OUT_DIR . '-' . $mday . '-' . $hour;
-mkdir OUT_DIR . '-' . $mday . '-' . $hour . '/ports';
+mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min;
+mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . '/ports';
 
 open C, "/opt/etc/networks.conf" or die "Failed to open network configuration file! $!";
 my @CFGNETS = <C>;
@@ -177,9 +177,9 @@ close F;
 foreach my $ip (keys %TIMECNTRS) {
 	
 	my @parts = split /\./, $ip;
-	mkdir OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0];
+	mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0];
 	
-	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0] . "/$ip.packets" or die "Failed to open stat file for ip $ip. $!";
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0] . "/$ip.packets" or die "Failed to open stat file for ip $ip. $!";
 	foreach my $m (sort keys %{$TIMECNTRS{$ip}}) {
 		print W "$m\t", $TIMECNTRS{$ip}{$m}->[0],"\t",$TIMECNTRS{$ip}{$m}->[1],"\n";
 	}
@@ -189,9 +189,9 @@ foreach my $ip (keys %TIMECNTRS) {
 foreach my $ip (keys %PEERS) {
 	
 	my @parts = split /\./, $ip;
-	mkdir OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0];
+	mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0];
 	
-	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0] . "/$ip.peers" or die "Failed to open stat file for ip $ip. $!";
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0] . "/$ip.peers" or die "Failed to open stat file for ip $ip. $!";
 	foreach my $peer (sort keys %{$PEERS{$ip}}) {
 		print W "$peer\t", $PEERS{$ip}{$peer}->[0],"\t",$PEERS{$ip}{$peer}->[1],"\n";
 	}
@@ -201,9 +201,9 @@ foreach my $ip (keys %PEERS) {
 foreach my $ip (keys %PORTS) {
 	
 	my @parts = split /\./, $ip;
-	mkdir OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0];
+	mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0];
 	
-	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0] . "/$ip.ports" or die "Failed to open stat file for ip $ip. $!";
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0] . "/$ip.ports" or die "Failed to open stat file for ip $ip. $!";
 	foreach my $p (sort keys %{$PORTS{$ip}}) {
 		print W "$p\t", $PORTS{$ip}{$p}->[0],"\t",$PORTS{$ip}{$p}->[1], "\t", $PORTS{$ip}{$p}->[2],"\t",$PORTS{$ip}{$p}->[3],"\n";
 	}
@@ -211,14 +211,14 @@ foreach my $ip (keys %PORTS) {
 }
 
 foreach my $port (keys %PORTCOUNTERS) {
-	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/ports/$port.ips" or die "Failed to open stat file for ports $port. $!";
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/ports/$port.ips" or die "Failed to open stat file for ports $port. $!";
 	foreach my $ip (sort keys %{$PORTCOUNTERS{$port}}) {
 		print W "$ip\t", $PORTCOUNTERS{$port}{$ip}->[0], "\t", $PORTCOUNTERS{$port}{$ip}->[1],"\n";
 	}
 	close W;
 }
 
-open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/_utilization" or die "Failed to open utilization. $!";
+open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/_utilization" or die "Failed to open utilization. $!";
 foreach my $ip (sort keys %UTILIZATION) {
 	print W "$ip\t", $UTILIZATION{$ip}->[0],"\t", $UTILIZATION{$ip}->[1], "\n";
 }
