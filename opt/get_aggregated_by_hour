@@ -5,12 +5,19 @@ use warnings;
 
 use constant SAMPLE => 512;
 use constant IMIX => 500;
-use constant OUT_DIR => '/sflow/aggregated';
+use constant OUT_DIR => ($ARGV[1] ? $ARGV[1] : '/sflow/aggregated');
+
+my %TIMECNTRS = ();
+my %PEERS = ();
+my %PORTS = ();
+my %UTILIZATION = ();
+my %PORTCOUNTERS = ();
 
 my $file = $ARGV[0];
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 
 mkdir OUT_DIR . '-' . $mday . '-' . $hour;
+mkdir OUT_DIR . '-' . $mday . '-' . $hour . '/ports';
 
 open C, "/opt/etc/networks.conf" or die "Failed to open network configuration file! $!";
 my @CFGNETS = <C>;
@@ -24,6 +31,7 @@ open P, "/opt/etc/ports.conf" or die "Failed to open network ports configuration
 my @CFGPORTS = <P>;
 foreach (@CFGPORTS) {
 	chomp $_;
+	$PORTCOUNTERS{$_} = {};
 }
 close P;
 my $PORTS = '@' . join ('@',@CFGPORTS) . '@';
@@ -31,10 +39,6 @@ my $PORTS = '@' . join ('@',@CFGPORTS) . '@';
 
 open F, $file or die "Failed to opent $file for processing. $!\n";
 
-my %TIMECNTRS = ();
-my %PEERS = ();
-my %PORTS = ();
-my %UTILIZATION = ();
 
 while(<F>) {
 	chomp;
@@ -75,20 +79,30 @@ while(<F>) {
 			
 			if($PORTS =~ /$toport/ && !exists $PORTS{$fromip}{$line[16]}) {
 				$PORTS{$fromip}{$line[16]} = [0,0,0,0];
+				# 
+				if(!exists $PORTCOUNTERS{$line[16]}{$fromip}) {
+					$PORTCOUNTERS{$line[16]}{$fromip} = [0,0];			
+				}
 			}
 
 			if($PORTS =~ /$fromport/ && !exists $PORTS{$fromip}{$line[15]}) {
 				$PORTS{$fromip}{$line[15]} = [0,0,0,0];
+				# 
+				if(!exists $PORTCOUNTERS{$line[15]}{$fromip}) {
+					$PORTCOUNTERS{$line[15]}{$fromip} = [0,0];
+				}
+
 			}
 
 			if($PORTS =~ /$fromport/) {
     				$PORTS{$fromip}{$line[15]} -> [0] ++;
+				$PORTCOUNTERS{$line[15]}{$fromip}->[0]++;
 			}
 
 			if($PORTS =~ /$toport/) {
     				$PORTS{$fromip}{$line[16]} -> [1] ++;
+				$PORTCOUNTERS{$line[16]}{$fromip}->[1]++;
 			}
-
 
 			if(!exists $TIMECNTRS{$fromip}{$minute}) {
 				$TIMECNTRS{$fromip}{$minute} = [0,0];
@@ -118,18 +132,30 @@ while(<F>) {
 
 			if($PORTS =~ /$toport/ && !exists $PORTS{$toip}{$line[16]}) {
 				$PORTS{$toip}{$line[16]} = [0,0,0,0];
+				# 
+				if(!exists $PORTCOUNTERS{$line[16]}{$toip}) {
+					$PORTCOUNTERS{$line[16]}{$toip} = [0,0];			
+				}
+
 			}
 
 			if($PORTS =~ /$fromport/ && !exists $PORTS{$toip}{$line[15]}) {
 				$PORTS{$toip}{$line[15]} = [0,0,0,0];
+				# 
+				if(!exists $PORTCOUNTERS{$line[15]}{$toip}) {
+					$PORTCOUNTERS{$line[15]}{$toip} = [0,0];
+				}
 			}
 
 			if($PORTS =~ /$fromport/) {
     				$PORTS{$toip}{$line[15]} -> [2] ++;
+				$PORTCOUNTERS{$line[15]}{$toip}->[1]++;
+
 			}
 
 			if($PORTS =~ /$toport/) {
     				$PORTS{$toip}{$line[16]} -> [3] ++;
+				$PORTCOUNTERS{$line[16]}{$toip}->[0]++;
 			}
 
 			if(!exists $TIMECNTRS{$toip}{$minute}) {
@@ -149,7 +175,11 @@ while(<F>) {
 close F;
 
 foreach my $ip (keys %TIMECNTRS) {
-	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/$ip.packets" or die "Failed to open stat file for ip $ip. $!";
+	
+	my @parts = split /\./, $ip;
+	mkdir OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0];
+	
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0] . "/$ip.packets" or die "Failed to open stat file for ip $ip. $!";
 	foreach my $m (sort keys %{$TIMECNTRS{$ip}}) {
 		print W "$m\t", $TIMECNTRS{$ip}{$m}->[0],"\t",$TIMECNTRS{$ip}{$m}->[1],"\n";
 	}
@@ -157,7 +187,11 @@ foreach my $ip (keys %TIMECNTRS) {
 }
 
 foreach my $ip (keys %PEERS) {
-	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/$ip.peers" or die "Failed to open stat file for ip $ip. $!";
+	
+	my @parts = split /\./, $ip;
+	mkdir OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0];
+	
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0] . "/$ip.peers" or die "Failed to open stat file for ip $ip. $!";
 	foreach my $peer (sort keys %{$PEERS{$ip}}) {
 		print W "$peer\t", $PEERS{$ip}{$peer}->[0],"\t",$PEERS{$ip}{$peer}->[1],"\n";
 	}
@@ -165,9 +199,21 @@ foreach my $ip (keys %PEERS) {
 }
 
 foreach my $ip (keys %PORTS) {
-	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/$ip.ports" or die "Failed to open stat file for ip $ip. $!";
+	
+	my @parts = split /\./, $ip;
+	mkdir OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0];
+	
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/" . $parts[0] . "/$ip.ports" or die "Failed to open stat file for ip $ip. $!";
 	foreach my $p (sort keys %{$PORTS{$ip}}) {
 		print W "$p\t", $PORTS{$ip}{$p}->[0],"\t",$PORTS{$ip}{$p}->[1], "\t", $PORTS{$ip}{$p}->[2],"\t",$PORTS{$ip}{$p}->[3],"\n";
+	}
+	close W;
+}
+
+foreach my $port (keys %PORTCOUNTERS) {
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . "/ports/$port.ips" or die "Failed to open stat file for ports $port. $!";
+	foreach my $ip (sort keys %{$PORTCOUNTERS{$port}}) {
+		print W "$ip\t", $PORTCOUNTERS{$port}{$ip}->[0], "\t", $PORTCOUNTERS{$port}{$ip}->[1],"\n";
 	}
 	close W;
 }
