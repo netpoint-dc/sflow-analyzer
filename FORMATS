@@ -1,0 +1,42 @@
+IPv6 is not supported yet.
+
+
+===========================================================
+_utilization 
+
+Holds general utilization statistics in PPS for period.
+Format is:
+IP	PPS_Send	PPS_Received
+
+===========================================================
+ ports/<PORT>.ips
+
+Holds IP exchange statistics per port.
+Format is:
+IP	PPS_Send&ReceivedFromLocal<PORT>		PPS_Send&ReceivedFromRemote<PORT>
+
+===========================================================
+<OCTET>/<IP>.packets
+
+Holds IP exchange statistics per IP for every minute.
+Format is:
+MINUTE	PPS_Send		PPS_Received
+
+===========================================================
+<OCTET>/<IP>.peers
+
+Holds IP exchange statistics for IP for every peer.
+Format is:
+<IP>	PPS_Send		PPS_Received
+
+===========================================================
+<OCTET>/<IP>.ports
+
+Holds IP exchange statistics for IP per port.
+Format is:
+<PORT>	PPS_SendFromLocalPort	PPS_SendToRemotePort 	PPS_ReceivedFromRemotePort 	PPS_ReceivedToLocalPort
+
+
+
+
+
