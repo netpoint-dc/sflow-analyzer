@@ -35,4 +35,20 @@ Holds IP exchange statistics for IP per port.
 Format is:
 <PORT>	PPS_SendFromLocalPort	PPS_SendToRemotePort 	PPS_ReceivedFromRemotePort 	PPS_ReceivedToLocalPort
 
+===========================================================
+countries/<CC>.ips
+
+Holds IP exchange statistics for certain countries for IPs.
+Format is:
+<IP>	PPS_Send		PPS_Received
+
+
+===========================================================
+countries/_stats
+
+Holds IP exchange statistics for every country.
+Format is:
+<CC>	PPS_Send		PPS_Received
+
+
 

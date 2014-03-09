@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-
+use Geo::IP;
 use constant SAMPLE => 512;
 use constant IMIX => 500;
 use constant OUT_DIR => ($ARGV[1] ? $ARGV[1] : '/sflow/aggregated');
@@ -12,12 +12,19 @@ my %PEERS = ();
 my %PORTS = ();
 my %UTILIZATION = ();
 my %PORTCOUNTERS = ();
+my %COUNTRIES = ();
+my %COUNTRIES_STATS = ();
+my %CITIES = ();
+
+my $countrybase = Geo::IP->open("/opt/etc/GeoIP.dat",GEOIP_MEMORY_CACHE) or die "Failed to open Country GeoIP database!";
+my $citybase = Geo::IP->open("/opt/etc/GeoLiteCity.dat",GEOIP_MEMORY_CACHE) or die "Failed to open City GeoIP database!";
 
 my $file = $ARGV[0];
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 
 mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min;
 mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . '/ports';
+mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . '/countries';
 
 open C, "/opt/etc/networks.conf" or die "Failed to open network configuration file! $!";
 my @CFGNETS = <C>;
@@ -48,6 +55,34 @@ while(<F>) {
 	my ($fromip,$toip) = ($line[10],$line[11]);
 	my $ssize = $line[20];
 	
+	my $cfrom = $countrybase -> country_code_by_addr($fromip) || 'NA';
+	my $cto = $countrybase -> country_code_by_addr($toip) || 'NA';
+
+	if(!exists $COUNTRIES{$cfrom}) {
+		$COUNTRIES{$cfrom} = {};
+		$COUNTRIES_STATS{$cfrom} = [1,1];
+	}
+
+	if(!exists $COUNTRIES{$cto}) {
+		$COUNTRIES{$cto} = {};
+		$COUNTRIES_STATS{$cto} = [1,1];
+	}
+		
+	if(!exists $COUNTRIES{$cfrom}{$fromip}) {
+		$COUNTRIES{$cfrom}{$fromip} = [1,1];
+	}
+
+	if(!exists $COUNTRIES{$cto}{$toip}) {
+		$COUNTRIES{$cto}{$toip} = [1,1];
+	}
+
+	$COUNTRIES_STATS{$cfrom}->[0] += $ssize;
+	$COUNTRIES_STATS{$cto}->[1]   += $ssize;
+
+	$COUNTRIES{$cfrom}{$fromip}->[0] += $ssize;
+	$COUNTRIES{$cto}{$toip}->[1]     += $ssize;
+
+
 	if(!exists $UTILIZATION{$fromip}) {
 		$UTILIZATION{$fromip} = [1,1];			
 	}
@@ -55,8 +90,8 @@ while(<F>) {
 		$UTILIZATION{$toip} = [1,1];			
 	}
 
-	$UTILIZATION{$fromip}[0]+=$ssize;
-	$UTILIZATION{$toip}[1]+=$ssize;
+	$UTILIZATION{$fromip}->[0]+=$ssize;
+	$UTILIZATION{$toip}->[1]+=$ssize;
 	
 	my ($fromport,$toport) = ('@' . $line[15] . '@' , '@' . $line[16] . '@');
 	if (1) { #foreach my $net (@CFGNETS) {
@@ -224,4 +259,18 @@ foreach my $ip (sort keys %UTILIZATION) {
 	print W "$ip\t", $UTILIZATION{$ip}->[0],"\t", $UTILIZATION{$ip}->[1], "\n";
 }
 
+foreach my $country (keys %COUNTRIES) {
+	next if !$country;
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/countries/$country.ips" or die "Failed to open stat file for country $country. $!";
+	foreach my $ip (sort keys %{$COUNTRIES{$country}}) {
+		next if !$ip;
+		print W "$ip\t", $COUNTRIES{$country}{$ip}->[0], "\t", $COUNTRIES{$country}{$ip}->[1],"\n";
+	}
+	close W;
+}
+
+open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/countries/_stats" or die "Failed to open country statistics. $!";
+foreach my $c (sort keys %COUNTRIES_STATS) {
+	print W "$c\t", $COUNTRIES_STATS{$c}->[0],"\t", $COUNTRIES_STATS{$c}->[1], "\n";
+}
 
