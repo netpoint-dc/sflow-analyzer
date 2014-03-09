@@ -1,6 +1,5 @@
 IPv6 is not supported yet.
 
-
 ===========================================================
 _utilization 
 
@@ -35,8 +34,5 @@ Format is:
 Holds IP exchange statistics for IP per port.
 Format is:
 <PORT>	PPS_SendFromLocalPort	PPS_SendToRemotePort 	PPS_ReceivedFromRemotePort 	PPS_ReceivedToLocalPort
-
-
-
 
 
