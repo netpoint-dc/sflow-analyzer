@@ -46,6 +46,7 @@ while(<F>) {
 	#print $line[10],$line[11],"\n";
 	my $minute = int($line[0] / 60);
 	my ($fromip,$toip) = ($line[10],$line[11]);
+	my $ssize = $line[20];
 	
 	if(!exists $UTILIZATION{$fromip}) {
 		$UTILIZATION{$fromip} = [0,0];			
@@ -54,8 +55,8 @@ while(<F>) {
 		$UTILIZATION{$toip} = [0,0];			
 	}
 
-	$UTILIZATION{$fromip}[0]++;
-	$UTILIZATION{$toip}[1]++;
+	$UTILIZATION{$fromip}[0]+=$ssize;
+	$UTILIZATION{$toip}[1]+=$ssize;
 	
 	my ($fromport,$toport) = ('@' . $line[15] . '@' , '@' . $line[16] . '@');
 	if (1) { #foreach my $net (@CFGNETS) {
@@ -95,13 +96,13 @@ while(<F>) {
 			}
 
 			if($PORTS =~ /$fromport/) {
-    				$PORTS{$fromip}{$line[15]} -> [0] ++;
-				$PORTCOUNTERS{$line[15]}{$fromip}->[0]++;
+    				$PORTS{$fromip}{$line[15]} -> [0] +=$ssize;
+				$PORTCOUNTERS{$line[15]}{$fromip}->[0]+=$ssize;
 			}
 
 			if($PORTS =~ /$toport/) {
-    				$PORTS{$fromip}{$line[16]} -> [1] ++;
-				$PORTCOUNTERS{$line[16]}{$fromip}->[1]++;
+    				$PORTS{$fromip}{$line[16]} -> [1] +=$ssize;
+				$PORTCOUNTERS{$line[16]}{$fromip}->[1]+=$ssize;
 			}
 
 			if(!exists $TIMECNTRS{$fromip}{$minute}) {
@@ -112,8 +113,8 @@ while(<F>) {
 				$PEERS{$fromip}{$line[11]} = [0,0];			
 			}
 
-			$TIMECNTRS{$fromip}{$minute} -> [0] ++;
-			$PEERS{$fromip}{$line[11]} -> [0] ++;
+			$TIMECNTRS{$fromip}{$minute} -> [0] +=$ssize;
+			$PEERS{$fromip}{$line[11]} -> [0] +=$ssize;
 		}
 
 		if(1) { #$line[11] =~ /$net/) {
@@ -148,14 +149,14 @@ while(<F>) {
 			}
 
 			if($PORTS =~ /$fromport/) {
-    				$PORTS{$toip}{$line[15]} -> [2] ++;
-				$PORTCOUNTERS{$line[15]}{$toip}->[1]++;
+    				$PORTS{$toip}{$line[15]} -> [2] +=$ssize;
+				$PORTCOUNTERS{$line[15]}{$toip}->[1]+=$ssize;
 
 			}
 
 			if($PORTS =~ /$toport/) {
-    				$PORTS{$toip}{$line[16]} -> [3] ++;
-				$PORTCOUNTERS{$line[16]}{$toip}->[0]++;
+    				$PORTS{$toip}{$line[16]} -> [3] +=$ssize;
+				$PORTCOUNTERS{$line[16]}{$toip}->[0]+=$ssize;
 			}
 
 			if(!exists $TIMECNTRS{$toip}{$minute}) {
@@ -165,8 +166,8 @@ while(<F>) {
 				$PEERS{$toip}{$line[10]} = [0,0];			
 			}
 
-			$TIMECNTRS{$toip}{$minute} -> [1] ++;
-			$PEERS{$toip}{$line[10]} -> [1] ++;
+			$TIMECNTRS{$toip}{$minute} -> [1] +=$ssize;
+			$PEERS{$toip}{$line[10]} -> [1] +=$ssize;
 
 		}
 	}
