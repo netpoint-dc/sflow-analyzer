@@ -5,10 +5,10 @@ _utilization
 
 Holds general utilization statistics in PPS for period.
 Format is:
-IP	PPS_Send	PPS_Received
+IP	PPS_Send	PPS_Received 	COUNTRY
 
 ===========================================================
- ports/<PORT>.ips
+ports/<PORT>.ips
 
 Holds IP exchange statistics per port.
 Format is:
