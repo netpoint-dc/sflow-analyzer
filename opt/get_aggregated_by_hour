@@ -15,6 +15,7 @@ my %PORTCOUNTERS = ();
 my %COUNTRIES = ();
 my %COUNTRIES_STATS = ();
 my %CITIES = ();
+my %IPCOUNTRIES = ();
 
 my $countrybase = Geo::IP->open("/opt/etc/GeoIP.dat",GEOIP_MEMORY_CACHE) or die "Failed to open Country GeoIP database!";
 my $citybase = Geo::IP->open("/opt/etc/GeoLiteCity.dat",GEOIP_MEMORY_CACHE) or die "Failed to open City GeoIP database!";
@@ -57,6 +58,26 @@ while(<F>) {
 	
 	my $cfrom = $countrybase -> country_code_by_addr($fromip) || 'NA';
 	my $cto = $countrybase -> country_code_by_addr($toip) || 'NA';
+
+	if(!exists $IPCOUNTRIES{$fromip}) {
+		$IPCOUNTRIES{$fromip} = {}
+	}
+
+	if(!exists $IPCOUNTRIES{$toip}) {
+		$IPCOUNTRIES{$toip} = {}
+	}
+
+	if(!exists $IPCOUNTRIES{$fromip}{$cto}) {
+		$IPCOUNTRIES{$fromip}{$cto} = [1,1];
+	}
+
+
+	if(!exists $IPCOUNTRIES{$toip}{$cfrom}) {
+		$IPCOUNTRIES{$toip}{$cfrom} = [1,1];
+	}
+
+	$IPCOUNTRIES{$toip}{$cfrom}->[1] += $ssize; 
+	$IPCOUNTRIES{$fromip}{$cto}->[0] += $ssize; 
 
 	if(!exists $COUNTRIES{$cfrom}) {
 		$COUNTRIES{$cfrom} = {};
@@ -145,7 +166,7 @@ while(<F>) {
 			}
 
 			if(!exists $PEERS{$fromip}{$line[11]}) {
-				$PEERS{$fromip}{$line[11]} = [1,1];			
+				$PEERS{$fromip}{$line[11]} = [1,1,$cto];			
 			}
 
 			$TIMECNTRS{$fromip}{$minute} -> [0] +=$ssize;
@@ -198,7 +219,7 @@ while(<F>) {
 				$TIMECNTRS{$toip}{$minute} = [1,1];
 			}
 			if(!exists $PEERS{$toip}{$line[10]}) {
-				$PEERS{$toip}{$line[10]} = [1,1];			
+				$PEERS{$toip}{$line[10]} = [1,1,$cfrom];			
 			}
 
 			$TIMECNTRS{$toip}{$minute} -> [1] +=$ssize;
@@ -229,10 +250,24 @@ foreach my $ip (keys %PEERS) {
 	
 	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0] . "/$ip.peers" or die "Failed to open stat file for ip $ip. $!";
 	foreach my $peer (sort keys %{$PEERS{$ip}}) {
-		print W "$peer\t", $PEERS{$ip}{$peer}->[0],"\t",$PEERS{$ip}{$peer}->[1],"\n";
+		print W "$peer\t", $PEERS{$ip}{$peer}->[0],"\t",$PEERS{$ip}{$peer}->[1],"\t",$PEERS{$ip}{$peer}->[2],"\n";
 	}
 	close W;
 }
+
+
+foreach my $ip (keys %IPCOUNTRIES) {
+	
+	my @parts = split /\./, $ip;
+	mkdir OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0];
+	
+	open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/" . $parts[0] . "/$ip.geo" or die "Failed to open stat file for ip $ip. $!";
+	foreach my $country (sort keys %{$IPCOUNTRIES{$ip}}) {
+		print W "$country\t", $IPCOUNTRIES{$ip}{$country}->[0], "\t", $IPCOUNTRIES{$ip}{$country}->[1], "\n";
+	}
+	close W;
+}
+
 
 foreach my $ip (keys %PORTS) {
 	

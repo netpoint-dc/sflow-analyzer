@@ -26,7 +26,14 @@ MINUTE	PPS_Send		PPS_Received
 
 Holds IP exchange statistics for IP for every peer.
 Format is:
-<IP>	PPS_Send		PPS_Received
+<IP>	PPS_Send		PPS_Received		COUNTRY
+
+===========================================================
+<OCTET>/<IP>.geo
+
+Holds IP exchange statistics for IP for every peer.
+Format is:
+<COUNTRY>	PPS_Send		PPS_Received
 
 ===========================================================
 <OCTET>/<IP>.ports
