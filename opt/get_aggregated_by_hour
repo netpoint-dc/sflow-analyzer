@@ -105,10 +105,10 @@ while(<F>) {
 
 
 	if(!exists $UTILIZATION{$fromip}) {
-		$UTILIZATION{$fromip} = [1,1];			
+		$UTILIZATION{$fromip} = [1,1,$cfrom];			
 	}
 	if(!exists $UTILIZATION{$toip}) {
-		$UTILIZATION{$toip} = [1,1];			
+		$UTILIZATION{$toip} = [1,1,$cto];			
 	}
 
 	$UTILIZATION{$fromip}->[0]+=$ssize;
@@ -291,7 +291,7 @@ foreach my $port (keys %PORTCOUNTERS) {
 
 open W,">", OUT_DIR . '-' . $mday . '-' . $hour . '-' . $min . "/_utilization" or die "Failed to open utilization. $!";
 foreach my $ip (sort keys %UTILIZATION) {
-	print W "$ip\t", $UTILIZATION{$ip}->[0],"\t", $UTILIZATION{$ip}->[1], "\n";
+	print W "$ip\t", $UTILIZATION{$ip}->[0],"\t", $UTILIZATION{$ip}->[1],"\t", $UTILIZATION{$ip}->[2], "\n";
 }
 
 foreach my $country (keys %COUNTRIES) {
