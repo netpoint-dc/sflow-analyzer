@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# include configuration
+. /opt/etc/rotate.conf
+
+# terminate all running sflowtool instances
+killall sflowtool
+
+# create filename for current flow
+FILE=sflow-`date +"%Y%m%d-%H%M"`
+
+# rename current flow to certain name
+mv $LOCALPATH/current $LOCALPATH/$FILE
+
+# run collector again
+screen -dmS sflow-collect /opt/save-sflow
+
+# change to directory where sflow stored
+cd $LOCALPATH
+
+# foreach sflow file generate statistics
+ls sflow-* | while read F ; do
+	/opt/get_aggregated_by_hour $F
+	bzip2 -vc $F > $LOCALPATH/csf-$F.bz2
+done
+
+# append flow to daily flow
+cat sflow* >> processed/sflow-`date +"%m%d"`.csv
+
+# delete flows
+rm sflow*
+
+# copy compressed flows to remote site
+scp -i $KEY *.bz2 $LOGIN@$HOST:$REMOTEPATH && rm *.bz2
+
+# compress aggregated statistics
+ls $LOCALPATH | grep aggregated | while read f ; do
+	tar cjvf $f.tbz2 $f
+	rm -R $f
+done
+
+# copy aggregated stats to remote site
+scp -i $KEY -r $LOCALPATH/aggregated*.tbz2 $LOGIN@$HOST:$REMOTEPATH 
+rm $LOCALPATH/aggregated*
+
+# remove old daily full statistics
+find $LOCALPATH/processed/*  -mtime +$KEEPDAYS -exec rm {} \;
+
+
+
