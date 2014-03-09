@@ -2,6 +2,8 @@
 
 . /opt/etc/rotate.conf
 
+mkdir $LOCALPATH
+
 while : ; do
 	/opt/rotate-sflow
 	sleep $ROTATE 
